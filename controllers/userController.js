@@ -49,6 +49,7 @@ export const signupUser = async (req, res) => {
         name: user.name,
         email: user.email,
         cartData: user.cartData,
+        createdAt: user.createdAt,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -84,6 +85,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         cartData: user.cartData,
+        createdAt: user.createdAt,
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
@@ -119,6 +121,49 @@ export const getCurrentUser = async (req, res) => {
         name: user.name,
         email: user.email,
         cartData: user.cartData,
+        createdAt: user.createdAt,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc   Update user profile
+// @route  PUT /api/users/profile
+// @access Private
+export const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+
+      // If email is being updated, check if it's already taken
+      if (req.body.email && req.body.email !== user.email) {
+        const emailExists = await User.findOne({ email: req.body.email });
+        if (emailExists) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+        user.email = req.body.email;
+      }
+
+      // If password is being updated, hash it
+      if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        cartData: updatedUser.cartData,
+        createdAt: updatedUser.createdAt,
       });
     } else {
       res.status(404).json({ message: "User not found" });
