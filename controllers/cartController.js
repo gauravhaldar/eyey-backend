@@ -6,8 +6,20 @@ export const addToCart = async (req, res) => {
   try {
     const { userId, productId, quantity = 1, size, color } = req.body;
 
+    console.log("🚀 BACKEND: AddToCart request received");
+    console.log("📝 Request data:", {
+      userId,
+      productId,
+      quantity,
+      size,
+      color,
+    });
+
     // Validation
     if (!userId || !productId) {
+      console.log(
+        "❌ BACKEND: Validation failed - missing userId or productId"
+      );
       return res.status(400).json({
         success: false,
         message: "User ID and Product ID are required",
@@ -15,26 +27,33 @@ export const addToCart = async (req, res) => {
     }
 
     // Check if product exists
+    console.log("🔍 BACKEND: Looking up product:", productId);
     const product = await Product.findById(productId);
     if (!product) {
+      console.log("❌ BACKEND: Product not found:", productId);
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
+    console.log("✅ BACKEND: Product found:", product.name);
 
     // Find user
+    console.log("🔍 BACKEND: Looking up user:", userId);
     const user = await User.findById(userId);
     if (!user) {
+      console.log("❌ BACKEND: User not found:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
+    console.log("✅ BACKEND: User found:", user.email || user._id);
 
     // Initialize cartData if empty
     if (!user.cartData) {
       user.cartData = {};
+      console.log("🔧 BACKEND: Initialized empty cart for user");
     }
 
     // Create unique key for product (includes size and color if provided)
@@ -43,11 +62,21 @@ export const addToCart = async (req, res) => {
         ? `${productId}_${size || "default"}_${color || "default"}`
         : productId;
 
+    console.log("🔑 BACKEND: Generated cart key:", cartKey);
+    console.log(
+      "🔍 BACKEND: Current cart data before modification:",
+      JSON.stringify(user.cartData, null, 2)
+    );
+
     // Add or update cart item with product details
     if (user.cartData[cartKey]) {
       // Item exists, update quantity only
+      const oldQuantity = user.cartData[cartKey].quantity;
       user.cartData[cartKey].quantity += parseInt(quantity);
       user.cartData[cartKey].updatedAt = new Date();
+      console.log(
+        `🔄 BACKEND: Updated existing item quantity: ${oldQuantity} -> ${user.cartData[cartKey].quantity}`
+      );
     } else {
       // New item, add to cart with full product details
       user.cartData[cartKey] = {
@@ -62,19 +91,62 @@ export const addToCart = async (req, res) => {
         color: color || null,
         addedAt: new Date(),
       };
+      console.log("➕ BACKEND: Added new item to cart:", product.name);
     }
 
-    // Save updated cart
-    await user.save();
+    // IMPORTANT: Mark the cartData field as modified for Mongoose
+    user.markModified("cartData");
+    console.log("🔧 BACKEND: Marked cartData as modified for Mongoose");
+    console.log(
+      "🔍 BACKEND: Cart data after modification:",
+      JSON.stringify(user.cartData, null, 2)
+    );
 
-    res.status(200).json({
+    // Save updated cart to database
+    console.log("💾 BACKEND: Saving cart to database...");
+    console.log(
+      "🔍 BACKEND: Cart data before save:",
+      JSON.stringify(user.cartData, null, 2)
+    );
+
+    const saveResult = await user.save();
+    console.log("✅ BACKEND: Cart saved successfully to database");
+    console.log("🔍 BACKEND: Save result:", saveResult ? "Success" : "Failed");
+
+    // Verify the save by re-fetching the user
+    const verifyUser = await User.findById(userId);
+    console.log(
+      "🔍 BACKEND: Verification - Cart data after save:",
+      JSON.stringify(verifyUser.cartData, null, 2)
+    );
+
+    const cartCount = Object.keys(user.cartData).length;
+    const verifyCartCount = Object.keys(verifyUser.cartData).length;
+    console.log("📊 BACKEND: Cart summary - Items (before save):", cartCount);
+    console.log(
+      "� BACKEND: Cart summary - Items (after save verification):",
+      verifyCartCount
+    );
+    console.log(
+      "�📦 BACKEND: Cart contents (before save):",
+      Object.keys(user.cartData)
+    );
+    console.log(
+      "📦 BACKEND: Cart contents (after save verification):",
+      Object.keys(verifyUser.cartData)
+    );
+
+    const response = {
       success: true,
       message: "Item added to cart successfully",
       cartData: user.cartData,
-      cartCount: Object.keys(user.cartData).length,
-    });
+      cartCount: cartCount,
+    };
+
+    console.log("📤 BACKEND: Sending response to frontend");
+    res.status(200).json(response);
   } catch (error) {
-    console.error("Add to cart error:", error);
+    console.error("🚨 BACKEND: Add to cart error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to add item to cart",
@@ -87,8 +159,11 @@ export const getCart = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    console.log("🔍 BACKEND: GetCart request for user:", userId);
+
     // Validation
     if (!userId) {
+      console.log("❌ BACKEND: Missing userId in getCart");
       return res.status(400).json({
         success: false,
         message: "User ID is required",
@@ -96,21 +171,31 @@ export const getCart = async (req, res) => {
     }
 
     // Find user
+    console.log("🔍 BACKEND: Looking up user in database...");
     const user = await User.findById(userId);
     if (!user) {
+      console.log("❌ BACKEND: User not found in getCart");
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    console.log("✅ BACKEND: User found, checking cart data...");
     const cartData = user.cartData || {};
+    console.log("📦 BACKEND: Raw cart data from database:", cartData);
+    console.log("📊 BACKEND: Cart items count:", Object.keys(cartData).length);
 
     // Get updated product details for each cart item
     const updatedCartData = {};
 
     for (const [cartKey, cartItem] of Object.entries(cartData)) {
       try {
+        console.log(
+          `🔍 BACKEND: Processing cart item [${cartKey}]:`,
+          cartItem.name
+        );
+
         // Get fresh product data
         const product = await Product.findById(cartItem.productId);
 
@@ -126,21 +211,29 @@ export const getCart = async (req, res) => {
             inStock: product.stock > 0,
             stock: product.stock,
           };
+          console.log(
+            `✅ BACKEND: Updated cart item [${cartKey}] with fresh product data`
+          );
         } else {
           // Product doesn't exist anymore, mark for removal
           console.log(
-            `Product ${cartItem.productId} not found, removing from cart`
+            `❌ BACKEND: Product ${cartItem.productId} not found, removing from cart`
           );
         }
       } catch (error) {
-        console.error(`Error fetching product ${cartItem.productId}:`, error);
+        console.error(
+          `🚨 BACKEND: Error fetching product ${cartItem.productId}:`,
+          error
+        );
       }
     }
 
     // Update user's cart with fresh data
     if (Object.keys(updatedCartData).length !== Object.keys(cartData).length) {
+      console.log("🔄 BACKEND: Cart data changed, updating database...");
       user.cartData = updatedCartData;
       await user.save();
+      console.log("✅ BACKEND: Cart updated in database");
     }
 
     // Calculate totals
@@ -160,7 +253,7 @@ export const getCart = async (req, res) => {
       0
     );
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       cartData: updatedCartData,
       cartCount: Object.keys(updatedCartData).length,
@@ -168,9 +261,16 @@ export const getCart = async (req, res) => {
       totalAmount,
       originalTotalAmount,
       savings: originalTotalAmount - totalAmount,
-    });
+    };
+
+    console.log("📤 BACKEND: Sending cart response:");
+    console.log("   - Cart count:", responseData.cartCount);
+    console.log("   - Total quantity:", responseData.totalQuantity);
+    console.log("   - Total amount:", responseData.totalAmount);
+
+    res.status(200).json(responseData);
   } catch (error) {
-    console.error("Get cart error:", error);
+    console.error("🚨 BACKEND: Get cart error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get cart data",
