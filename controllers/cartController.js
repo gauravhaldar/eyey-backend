@@ -283,8 +283,12 @@ export const updateCartQuantity = async (req, res) => {
   try {
     const { userId, cartKey, quantity } = req.body;
 
+    console.log("🔄 BACKEND: UpdateCartQuantity request received");
+    console.log("📝 Request data:", { userId, cartKey, quantity });
+
     // Validation
     if (!userId || !cartKey || quantity === undefined) {
+      console.log("❌ BACKEND: Validation failed - missing required fields");
       return res.status(400).json({
         success: false,
         message: "User ID, Cart Key, and Quantity are required",
@@ -292,6 +296,7 @@ export const updateCartQuantity = async (req, res) => {
     }
 
     if (quantity < 1) {
+      console.log("❌ BACKEND: Invalid quantity - must be at least 1");
       return res.status(400).json({
         success: false,
         message: "Quantity must be at least 1",
@@ -299,19 +304,37 @@ export const updateCartQuantity = async (req, res) => {
     }
 
     // Find user
+    console.log("🔍 BACKEND: Looking up user:", userId);
     const user = await User.findById(userId);
     if (!user) {
+      console.log("❌ BACKEND: User not found");
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    console.log(
+      "✅ BACKEND: User found, updating quantity for cart key:",
+      cartKey
+    );
+
     // Update quantity
     if (user.cartData && user.cartData[cartKey]) {
+      const oldQuantity = user.cartData[cartKey].quantity;
       user.cartData[cartKey].quantity = parseInt(quantity);
       user.cartData[cartKey].updatedAt = new Date();
+
+      console.log(
+        `🔄 BACKEND: Updated quantity: ${oldQuantity} -> ${quantity}`
+      );
+
+      // IMPORTANT: Mark the cartData field as modified for Mongoose
+      user.markModified("cartData");
+      console.log("🔧 BACKEND: Marked cartData as modified");
+
       await user.save();
+      console.log("✅ BACKEND: Quantity update saved to database");
 
       res.status(200).json({
         success: true,
@@ -339,8 +362,12 @@ export const removeFromCart = async (req, res) => {
   try {
     const { userId, cartKey } = req.body;
 
+    console.log("🗑️ BACKEND: RemoveFromCart request received");
+    console.log("📝 Request data:", { userId, cartKey });
+
     // Validation
     if (!userId || !cartKey) {
+      console.log("❌ BACKEND: Validation failed - missing userId or cartKey");
       return res.status(400).json({
         success: false,
         message: "User ID and Cart Key are required",
@@ -348,18 +375,34 @@ export const removeFromCart = async (req, res) => {
     }
 
     // Find user
+    console.log("🔍 BACKEND: Looking up user:", userId);
     const user = await User.findById(userId);
     if (!user) {
+      console.log("❌ BACKEND: User not found");
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    console.log(
+      "✅ BACKEND: User found, removing item with cart key:",
+      cartKey
+    );
+
     // Remove item from cart
     if (user.cartData && user.cartData[cartKey]) {
+      const itemName = user.cartData[cartKey].name;
       delete user.cartData[cartKey];
+
+      console.log(`🗑️ BACKEND: Removed item: ${itemName}`);
+
+      // IMPORTANT: Mark the cartData field as modified for Mongoose
+      user.markModified("cartData");
+      console.log("🔧 BACKEND: Marked cartData as modified");
+
       await user.save();
+      console.log("✅ BACKEND: Item removal saved to database");
 
       res.status(200).json({
         success: true,
@@ -406,6 +449,9 @@ export const clearCart = async (req, res) => {
 
     // Clear cart
     user.cartData = {};
+
+    // IMPORTANT: Mark the cartData field as modified for Mongoose
+    user.markModified("cartData");
     await user.save();
 
     res.status(200).json({
