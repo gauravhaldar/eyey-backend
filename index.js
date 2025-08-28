@@ -10,7 +10,8 @@ import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js"; // Import product routes
 import cartRoutes from "./routes/cartRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
-
+import shippingRoutes from "./routes/shippingRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
@@ -19,10 +20,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ✅ Allow frontend requests
-app.use(cors({
-  origin: ["http://localhost:3000","http://localhost:3001"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    credentials: true,
+  })
+);
 
 // Connect Database
 connectDB();
@@ -37,6 +40,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes); // Use product routes
 app.use("/api/cart", cartRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/shipping", shippingRoutes);
+
+//Error handling middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000;
 
