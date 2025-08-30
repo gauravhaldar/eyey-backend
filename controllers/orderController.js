@@ -1,5 +1,6 @@
 import Order from "../models/orderModel.js";
 import User from "../models/userModel.js";
+import Coupon from "../models/couponModel.js";
 
 // Create new order
 const createOrder = async (req, res) => {
@@ -64,6 +65,34 @@ const createOrder = async (req, res) => {
     });
 
     await order.save();
+
+    // If a coupon was used, increment its usage count
+    if (orderSummary.couponCode) {
+      try {
+        console.log(`Updating usage for coupon: ${orderSummary.couponCode}`);
+        const updatedCoupon = await Coupon.findOneAndUpdate(
+          {
+            code: orderSummary.couponCode.toUpperCase(),
+            isActive: true,
+          },
+          { $inc: { usedCount: 1 } },
+          { new: true }
+        );
+
+        if (updatedCoupon) {
+          console.log(
+            `Coupon ${orderSummary.couponCode} usage updated. New count: ${updatedCoupon.usedCount}`
+          );
+        } else {
+          console.log(
+            `Coupon ${orderSummary.couponCode} not found for usage update`
+          );
+        }
+      } catch (couponError) {
+        console.error("Error updating coupon usage:", couponError);
+        // Don't fail the order if coupon update fails
+      }
+    }
 
     // Populate user details for response
     await order.populate("user", "name email phone");

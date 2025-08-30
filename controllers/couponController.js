@@ -180,19 +180,47 @@ export const applyCoupon = async (req, res) => {
   try {
     const { code, orderAmount } = req.body;
 
+    // Validate input
+    if (!code || orderAmount === undefined || orderAmount === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon code and order amount are required",
+      });
+    }
+
+    if (typeof orderAmount !== "number" || orderAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Order amount must be a positive number",
+      });
+    }
+
+    console.log("Applying coupon:", { code, orderAmount });
+
     const coupon = await Coupon.findOne({
       code: code.toUpperCase(),
       isActive: true,
     });
 
     if (!coupon) {
+      console.log("Coupon not found:", code);
       return res.status(404).json({
         success: false,
         message: "Invalid coupon code",
       });
     }
 
+    console.log("Coupon found:", {
+      code: coupon.code,
+      minValue: coupon.minValue,
+      maxValue: coupon.maxValue,
+      usedCount: coupon.usedCount,
+      usageLimit: coupon.usageLimit,
+      expiryDate: coupon.expiryDate,
+    });
+
     if (coupon.expiryDate && coupon.expiryDate < new Date()) {
+      console.log("Coupon expired:", coupon.expiryDate);
       return res.status(400).json({
         success: false,
         message: "Coupon has expired",
@@ -200,6 +228,12 @@ export const applyCoupon = async (req, res) => {
     }
 
     if (coupon.usedCount >= coupon.usageLimit) {
+      console.log(
+        "Coupon usage limit exceeded:",
+        coupon.usedCount,
+        ">=",
+        coupon.usageLimit
+      );
       return res.status(400).json({
         success: false,
         message: "Coupon usage limit exceeded",
@@ -207,6 +241,12 @@ export const applyCoupon = async (req, res) => {
     }
 
     if (orderAmount < coupon.minValue) {
+      console.log(
+        "Order amount below minimum:",
+        orderAmount,
+        "<",
+        coupon.minValue
+      );
       return res.status(400).json({
         success: false,
         message: `Minimum order value should be ₹${coupon.minValue}`,
@@ -214,6 +254,12 @@ export const applyCoupon = async (req, res) => {
     }
 
     if (orderAmount > coupon.maxValue) {
+      console.log(
+        "Order amount above maximum:",
+        orderAmount,
+        ">",
+        coupon.maxValue
+      );
       return res.status(400).json({
         success: false,
         message: `Maximum order value should be ₹${coupon.maxValue}`,
@@ -222,10 +268,23 @@ export const applyCoupon = async (req, res) => {
 
     let discount = 0;
     if (coupon.type === "flat") {
-      discount = coupon.amount;
+      discount = Math.min(coupon.amount, orderAmount); // Don't allow discount greater than order amount
     } else if (coupon.type === "percentage") {
-      discount = (orderAmount * coupon.amount) / 100;
+      discount = Math.floor((orderAmount * coupon.amount) / 100);
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid coupon type",
+      });
     }
+
+    // Ensure discount doesn't exceed order amount
+    discount = Math.min(discount, orderAmount);
+
+    console.log("Coupon applied successfully:", {
+      discount,
+      finalAmount: orderAmount - discount,
+    });
 
     res.json({
       success: true,
