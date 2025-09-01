@@ -23,15 +23,17 @@ app.use(cookieParser());
 // ✅ Allow frontend requests
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://eyeyoptics.vercel.app",
-      "https://eyey-admin.vercel.app",
-    ],
+    origin: true, // Allow all origins temporarily
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
