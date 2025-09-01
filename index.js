@@ -26,9 +26,8 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://eyeyoptics.vercel.app/*",
-      "https://eyey-admin.vercel.app/login",
-      "https://eyey-admin.vercel.app/*",
+      "https://eyeyoptics.vercel.app",
+      "https://eyey-admin.vercel.app",
     ],
     credentials: true,
   })
