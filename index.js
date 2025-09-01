@@ -29,7 +29,7 @@ app.use(
       "https://eyeyoptics.vercel.app",
       "https://eyey-admin.vercel.app",
       "https://eyey-admin.vercel.app/login",
-    ], // Allow all origins temporarily
+    ], // Allow frontend domains
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -37,6 +37,7 @@ app.use(
       "Authorization",
       "X-Requested-With",
       "Accept",
+      "Origin",
     ],
     preflightContinue: false,
     optionsSuccessStatus: 204,
