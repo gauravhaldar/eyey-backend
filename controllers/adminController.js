@@ -5,7 +5,11 @@ const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
 
 // Generate JWT token
 const generateToken = () => {
-  return jwt.sign({ email: ADMIN_EMAIL, id: "admin_user_id" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  return jwt.sign(
+    { email: ADMIN_EMAIL, id: "admin_user_id" },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
 };
 
 // Admin login
@@ -14,23 +18,28 @@ export const adminLogin = (req, res) => {
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-  if (email.trim() === ADMIN_EMAIL.trim() && password.trim() === ADMIN_PASSWORD.trim()) {
-    const token = jwt.sign({ email: ADMIN_EMAIL, id: "admin_user_id" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  if (
+    email.trim() === ADMIN_EMAIL.trim() &&
+    password.trim() === ADMIN_PASSWORD.trim()
+  ) {
+    const token = jwt.sign(
+      { email: ADMIN_EMAIL, id: "admin_user_id" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.cookie("adminToken", token, {
-  httpOnly: true,
-  maxAge: 24 * 60 * 60 * 1000,
-  secure: true,        // ✅ Set to true for SameSite=None, and works on localhost
-  sameSite: "none",    // ✅ Required for cross-site cookies with secure:true
-});
-
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true, // ✅ Set to true for SameSite=None, and works on localhost
+      sameSite: "none", // ✅ Required for cross-site cookies with secure:true
+    });
 
     return res.status(200).json({ message: "Admin logged in successfully" });
   } else {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 };
-
 
 // Get current admin
 export const getCurrentAdmin = (req, res) => {
@@ -49,11 +58,11 @@ export const getCurrentAdmin = (req, res) => {
 // Admin logout
 export const adminLogout = (req, res) => {
   res.cookie("adminToken", "", {
-  httpOnly: true,
-  expires: new Date(0),
-  secure: true,       // ✅ Same as above
-  sameSite: "none",   // ✅ Same as above
-});
+    httpOnly: true,
+    expires: new Date(0),
+    secure: true, // ✅ Same as above
+    sameSite: "none", // ✅ Same as above
+  });
 
   return res.status(200).json({ message: "Admin logged out successfully" });
 };
@@ -61,9 +70,46 @@ export const adminLogout = (req, res) => {
 //get all users info
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}, "name email"); // Only select name and email
+    console.log("🔍 Fetching users...");
+    const users = await User.find({}, "name email createdAt"); // Select name, email, and createdAt
+    console.log(`👥 Found users: ${users.length}`);
+    console.log(
+      "📅 Sample user with dates:",
+      JSON.stringify(
+        {
+          name: users[0]?.name,
+          email: users[0]?.email,
+          createdAt: users[0]?.createdAt,
+          createdAtType: typeof users[0]?.createdAt,
+        },
+        null,
+        2
+      )
+    );
     res.json(users);
   } catch (error) {
+    console.error("❌ Error fetching users:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete user
+export const deleteUser = async (req, res) => {
+  try {
+    console.log("Delete user request received for ID:", req.params.id);
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user) {
+      console.log("User not found with ID:", id);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+    console.log("User deleted successfully:", id);
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
     res.status(500).json({ message: error.message });
   }
 };

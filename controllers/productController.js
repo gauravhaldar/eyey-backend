@@ -7,7 +7,21 @@ import mongoose from "mongoose";
 // Create Product -- Admin
 export const createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, category, stock, brand, frameDimensions, productInformation, newArrival, hotSeller, men, women, kids } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      stock,
+      brand,
+      frameDimensions,
+      productInformation,
+      newArrival,
+      hotSeller,
+      men,
+      women,
+      kids,
+    } = req.body;
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: "No images uploaded" });
@@ -23,7 +37,9 @@ export const createProduct = async (req, res, next) => {
           url: cloudinaryResponse.url,
         });
       } else {
-        console.error(`Failed to upload file ${file.originalname} to Cloudinary`);
+        console.error(
+          `Failed to upload file ${file.originalname} to Cloudinary`
+        );
       }
     }
 
@@ -32,7 +48,9 @@ export const createProduct = async (req, res, next) => {
     if (req.admin.id && mongoose.Types.ObjectId.isValid(req.admin.id)) {
       req.body.user = req.admin.id;
     } else {
-      console.warn("Admin ID is not a valid ObjectId, product will be created without a user reference.");
+      console.warn(
+        "Admin ID is not a valid ObjectId, product will be created without a user reference."
+      );
       delete req.body.user; // Ensure the invalid user field is not passed to Mongoose
     }
 
@@ -49,8 +67,8 @@ export const createProduct = async (req, res, next) => {
       product,
     });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
       console.error("Product Validation Error:", errors);
       return res.status(400).json({ message: "Validation Error", errors });
     } else {
@@ -126,7 +144,7 @@ export const getProductById = async (req, res, next) => {
 
     if (!product) {
       // If not found by ID or not an ObjectId, try to find by slugified name (case-insensitive)
-      const slugRegex = new RegExp(productIdOrSlug.replace(/-/g, ' '), 'i');
+      const slugRegex = new RegExp(productIdOrSlug.replace(/-/g, " "), "i");
       product = await Product.findOne({ name: { $regex: slugRegex } });
     }
 
@@ -147,11 +165,17 @@ export const getProductById = async (req, res, next) => {
 // Update Product -- Admin
 export const updateProduct = async (req, res, next) => {
   try {
+    console.log("📦 Update Product Request:");
+    console.log("Product ID:", req.params.id);
+    console.log("Request Body:", JSON.stringify(req.body, null, 2));
+
     let product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+
+    console.log("📦 Current product stock:", product.stock);
 
     // Handle Image Updates
     if (req.files && req.files.length > 0) {
@@ -178,6 +202,9 @@ export const updateProduct = async (req, res, next) => {
       runValidators: true,
       useFindAndModify: false,
     });
+
+    console.log("📦 Updated product stock:", product.stock);
+    console.log("✅ Product updated successfully in database");
 
     res.status(200).json({
       success: true,

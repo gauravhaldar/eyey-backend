@@ -4,6 +4,7 @@ import {
   adminLogout,
   getCurrentAdmin,
   getUsers,
+  deleteUser,
 } from "../controllers/adminController.js";
 import { adminAuth } from "../middleware/adminAuth.js";
 import {
@@ -33,7 +34,11 @@ router.get("/me", adminAuth, getCurrentAdmin);
 router.post("/logout", adminLogout);
 
 //get user info
-router.get("/customers", getUsers);
+router.get("/customers", getUsers); // Temporarily remove auth for debugging
+router.delete("/customers/:id", deleteUser); // Remove auth temporarily for testing
+router.get("/test", (req, res) =>
+  res.json({ message: "Admin routes working" })
+); // Test route
 
 // Coupon routes
 router.get("/coupons", getCoupons);
