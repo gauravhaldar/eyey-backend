@@ -1,0 +1,4 @@
+2025-09-01 19:19:56 +05:30: [dotenv@17.2.1] injecting env (9) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+2025-09-01 19:19:56 +05:30: [dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+2025-09-01 19:19:56 +05:30: Server running on port 8000
+2025-09-01 19:19:57 +05:30: ✅ MongoDB Connected: ac-sqvquag-shard-00-00.ue0hdtk.mongodb.net
