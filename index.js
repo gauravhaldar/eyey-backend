@@ -13,6 +13,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import shippingRoutes from "./routes/shippingRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import staffRoutes from "./routes/staffRoutes.js";
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/staff", staffRoutes);
 
 //Error handling middleware
 app.use(errorHandler);
