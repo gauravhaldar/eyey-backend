@@ -100,8 +100,12 @@ export const loginUser = async (req, res) => {
 // @access Private
 export const logoutUser = async (req, res) => {
   try {
-    // ✅ Clear cookie on logout
-    res.clearCookie("token");
+    // ✅ Clear cookie on logout with same options as login
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    });
     res.json({ message: "User logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -14,6 +14,7 @@ import shippingRoutes from "./routes/shippingRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import staffRoutes from "./routes/staffRoutes.js";
+import addressRoutes from "./routes/addressRoutes.js";
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/users/addresses", addressRoutes);
 
 //Error handling middleware
 app.use(errorHandler);
