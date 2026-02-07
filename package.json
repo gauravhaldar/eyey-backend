@@ -26,6 +26,7 @@
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "firebase-admin": "^13.6.1",
     "html-pdf-node": "^1.0.8",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.2",

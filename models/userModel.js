@@ -17,8 +17,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Please enter a password"],
+      required: false, // Optional for Google users
       minlength: 6,
+    },
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true, // Only for Google users
     },
     cartData: {
       type: Object,

@@ -1,12 +1,70 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import admin from "../config/firebaseAdmin.js";
 
 // Generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
+};
+
+// @desc   Google Login
+// @route  POST /api/users/google-login
+// @access Public
+export const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: "ID Token is required" });
+    }
+
+    // Verify the ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, name, uid } = decodedToken;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user if they don't exist
+      user = await User.create({
+        name: name || "Google User",
+        email,
+        firebaseUid: uid,
+        // No password needed for Google users
+      });
+    } else {
+      // If user exists but doesn't have firebaseUid, update it
+      if (!user.firebaseUid) {
+        user.firebaseUid = uid;
+        await user.save();
+      }
+    }
+
+    const token = generateToken(user.id);
+
+    // ✅ Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      cartData: user.cartData,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("❌ Google Login Error:", error);
+    res.status(401).json({ message: "Invalid Google Token" });
+  }
 };
 
 // @desc   Register new user
