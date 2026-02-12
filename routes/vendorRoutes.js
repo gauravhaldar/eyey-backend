@@ -17,4 +17,45 @@ router.post("/logout", logoutVendor);
 // Protected routes (vendor must be logged in)
 router.get("/me", vendorAuth, getCurrentVendor);
 
+// Dashboard stats
+import {
+    getVendorSummary,
+    getVendorProducts,
+    createVendorProduct,
+    updateVendorProduct,
+    deleteVendorProduct,
+    getVendorOrders,
+    updateVendorOrderStatus,
+    getVendorProfile,
+    updateVendorProfile,
+    getVendorReviews,
+    getVendorEarningsSummary,
+    getVendorEarningsHistory
+} from "../controllers/vendorDashboardController.js";
+
+router.get("/dashboard/summary", vendorAuth, getVendorSummary);
+
+// Profile management
+router.get("/profile", vendorAuth, getVendorProfile);
+router.put("/profile", vendorAuth, updateVendorProfile);
+
+// Reviews management
+router.get("/reviews", vendorAuth, getVendorReviews);
+
+// Earnings management
+router.get("/earnings/summary", vendorAuth, getVendorEarningsSummary);
+router.get("/earnings/history", vendorAuth, getVendorEarningsHistory);
+
+import upload from "../middleware/upload.js";
+
+// Product management
+router.get("/products", vendorAuth, getVendorProducts);
+router.post("/products", vendorAuth, upload.array("images", 4), createVendorProduct);
+router.put("/products/:id", vendorAuth, upload.array("images", 4), updateVendorProduct);
+router.delete("/products/:id", vendorAuth, deleteVendorProduct);
+
+// Order management
+router.get("/orders", vendorAuth, getVendorOrders);
+router.put("/orders/:id/status", vendorAuth, updateVendorOrderStatus);
+
 export default router;

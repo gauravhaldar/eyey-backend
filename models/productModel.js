@@ -84,6 +84,11 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: "User",
   },
+  vendor: {
+    type: mongoose.Schema.ObjectId,
+    ref: "Vendor",
+    required: [true, "Product must belong to a vendor"],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -26,6 +26,11 @@ const orderItemSchema = new mongoose.Schema({
   color: String,
   category: String,
   image: String,
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Vendor",
+    required: true,
+  },
 });
 
 const shippingAddressSchema = new mongoose.Schema({
