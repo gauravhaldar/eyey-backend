@@ -63,6 +63,22 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  brand: {
+    type: String,
+    default: "",
+  },
+  sellerName: {
+    type: String,
+    default: "",
+  },
+  sellerRating: {
+    type: Number,
+    default: 0,
+  },
+  deliveryTimeline: {
+    type: String,
+    default: "",
+  },
 
   user: {
     type: mongoose.Schema.ObjectId,

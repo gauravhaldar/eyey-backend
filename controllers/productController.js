@@ -16,6 +16,9 @@ export const createProduct = async (req, res, next) => {
       category,
       stock,
       brand,
+      sellerName,
+      sellerRating,
+      deliveryTimeline,
       frameDimensions,
       productInformation,
       newArrival,
@@ -307,6 +310,9 @@ export const bulkUploadProducts = async (req, res, next) => {
                 "stock",
                 "brand",
                 "description",
+                "sellerName",
+                "sellerRating",
+                "deliveryTimeline",
               ];
 
               // Clean and normalize field names from CSV
@@ -385,6 +391,9 @@ export const bulkUploadProducts = async (req, res, next) => {
                 category: cleanRow.category,
                 stock: stock,
                 brand: cleanRow.brand,
+                sellerName: cleanRow.sellername || "",
+                sellerRating: parseFloat(cleanRow.sellerrating) || 0,
+                deliveryTimeline: cleanRow.deliverytimeline || "",
                 frameDimensions: cleanRow.framedimensions || "",
                 productInformation: cleanRow.productinformation || "",
                 newArrival: parseBoolean(cleanRow.newarrival),
@@ -509,6 +518,9 @@ export const downloadCSVTemplate = async (req, res, next) => {
       "stock",
       "brand",
       "description",
+      "sellerName",
+      "sellerRating",
+      "deliveryTimeline",
       "frameDimensions",
       "productInformation",
       "newArrival",
@@ -543,6 +555,9 @@ export const downloadCSVTemplate = async (req, res, next) => {
       "25",
       "Ray-Ban",
       "Classic aviator sunglasses with premium UV protection and durable metal frame",
+      "Lenskart",
+      "4.5",
+      "Delivered within 3-5 working days",
       "58-14-140 mm",
       "Material: Metal frame Glass lenses. Features: UV400 protection Anti-reflective coating",
       "true",
@@ -615,8 +630,7 @@ export const bulkUploadImages = async (req, res, next) => {
       const batchPromises = batch.map(async (file, index) => {
         try {
           console.log(
-            `Uploading image ${processedCount + index + 1}/${
-              req.files.length
+            `Uploading image ${processedCount + index + 1}/${req.files.length
             }: ${file.originalname}`
           );
 
