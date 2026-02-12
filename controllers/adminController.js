@@ -1,8 +1,12 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/userModel.js";
 import Order from "../models/orderModel.js";
+import Vendor from "../models/vendorModel.js";
 import InvoiceGenerator from "../utils/invoiceGenerator.js";
 import SimpleInvoiceGenerator from "../utils/simpleInvoiceGenerator.js";
+import { sendVendorApprovalEmail, sendVendorRejectionEmail } from "../utils/emailService.js";
 
 const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
 
@@ -237,5 +241,182 @@ export const getInvoiceData = async (req, res) => {
       message: "Failed to fetch invoice data",
       error: error.message,
     });
+  }
+};
+
+// ==========================================
+// VENDOR MANAGEMENT
+// ==========================================
+
+/**
+ * @desc    Get all vendors (with optional status filter)
+ * @route   GET /api/admin/vendors
+ * @access  Admin only
+ */
+export const getVendors = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status ? { status: status.toUpperCase() } : {};
+
+    const vendors = await Vendor.find(filter)
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    console.log(`📋 Fetched ${vendors.length} vendors (filter: ${status || "ALL"})`);
+    res.status(200).json(vendors);
+  } catch (error) {
+    console.error("❌ Error fetching vendors:", error);
+    res.status(500).json({ message: "Failed to fetch vendors." });
+  }
+};
+
+/**
+ * @desc    Approve a vendor — generate password, hash, send email
+ * @route   PATCH /api/admin/vendors/:id/approve
+ * @access  Admin only
+ */
+export const approveVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendor = await Vendor.findById(id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    if (vendor.status === "APPROVED") {
+      return res.status(400).json({ message: "Vendor is already approved." });
+    }
+
+    // Generate random password (10 characters)
+    const plainPassword = crypto.randomBytes(5).toString("hex");
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(plainPassword, salt);
+
+    // Update vendor
+    vendor.status = "APPROVED";
+    vendor.password = hashedPassword;
+    vendor.rejectionReason = null;
+    await vendor.save();
+
+    // Send approval email with credentials
+    const emailResult = await sendVendorApprovalEmail(vendor, plainPassword);
+
+    console.log(`✅ Vendor approved: ${vendor.email} (password emailed: ${emailResult.success})`);
+
+    res.status(200).json({
+      message: "Vendor approved successfully. Credentials sent to vendor email.",
+      emailSent: emailResult.success,
+    });
+  } catch (error) {
+    console.error("❌ Error approving vendor:", error);
+    res.status(500).json({ message: "Failed to approve vendor." });
+  }
+};
+
+/**
+ * @desc    Reject a vendor
+ * @route   PATCH /api/admin/vendors/:id/reject
+ * @access  Admin only
+ */
+export const rejectVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const vendor = await Vendor.findById(id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    vendor.status = "REJECTED";
+    vendor.rejectionReason = reason || "Application did not meet requirements.";
+    vendor.password = null;
+    await vendor.save();
+
+    // Send rejection email
+    await sendVendorRejectionEmail(vendor, vendor.rejectionReason);
+
+    console.log(`❌ Vendor rejected: ${vendor.email}`);
+
+    res.status(200).json({
+      message: "Vendor rejected successfully.",
+    });
+  } catch (error) {
+    console.error("❌ Error rejecting vendor:", error);
+    res.status(500).json({ message: "Failed to reject vendor." });
+  }
+};
+
+/**
+ * @desc    Suspend a vendor
+ * @route   PATCH /api/admin/vendors/:id/suspend
+ * @access  Admin only
+ */
+export const suspendVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendor = await Vendor.findById(id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    vendor.status = "SUSPENDED";
+    await vendor.save();
+
+    console.log(`⛔ Vendor suspended: ${vendor.email}`);
+
+    res.status(200).json({
+      message: "Vendor suspended successfully.",
+    });
+  } catch (error) {
+    console.error("❌ Error suspending vendor:", error);
+    res.status(500).json({ message: "Failed to suspend vendor." });
+  }
+};
+
+/**
+ * @desc    Resend credentials email to an approved vendor (generates new password)
+ * @route   POST /api/admin/vendors/:id/resend-email
+ * @access  Admin only
+ */
+export const resendVendorEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendor = await Vendor.findById(id);
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    if (vendor.status !== "APPROVED") {
+      return res.status(400).json({ message: "Can only resend email to approved vendors." });
+    }
+
+    // Generate a new password
+    const plainPassword = crypto.randomBytes(5).toString("hex");
+
+    // Hash and save
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(plainPassword, salt);
+    vendor.password = hashedPassword;
+    await vendor.save();
+
+    // Send email
+    const emailResult = await sendVendorApprovalEmail(vendor, plainPassword);
+
+    console.log(`📧 Resent credentials to ${vendor.email} (success: ${emailResult.success})`);
+
+    res.status(200).json({
+      message: "New credentials generated and emailed to vendor.",
+      emailSent: emailResult.success,
+    });
+  } catch (error) {
+    console.error("❌ Error resending vendor email:", error);
+    res.status(500).json({ message: "Failed to resend email." });
   }
 };

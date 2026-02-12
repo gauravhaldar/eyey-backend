@@ -7,6 +7,11 @@ import {
   deleteUser,
   generateInvoice,
   getInvoiceData,
+  getVendors,
+  approveVendor,
+  rejectVendor,
+  suspendVendor,
+  resendVendorEmail,
 } from "../controllers/adminController.js";
 import { adminAuth } from "../middleware/adminAuth.js";
 import {
@@ -57,7 +62,7 @@ router.get("/coupons/analytics", adminAuth, getCouponAnalytics);
 // Debug test route
 router.post("/coupons/test", async (req, res) => {
   console.log("Test route - Raw body:", req.body);
-  
+
   try {
     // Test creating a coupon with startDate directly
     const testCoupon = new (await import("../models/couponModel.js")).default({
@@ -71,10 +76,10 @@ router.post("/coupons/test", async (req, res) => {
       startDate: new Date("2024-12-15"),
       expiryDate: new Date("2024-12-25"),
     });
-    
+
     const saved = await testCoupon.save();
     console.log("Direct test coupon saved:", saved);
-    
+
     res.json({ success: true, received: req.body, directTest: saved });
   } catch (error) {
     console.error("Direct test error:", error);
@@ -90,5 +95,12 @@ router.delete("/orders/:orderId", deleteOrder);
 // Invoice routes
 router.get("/orders/:orderId/invoice", adminAuth, generateInvoice);
 router.get("/invoice/:invoiceId", getInvoiceData); // Public route for QR verification
+
+// Vendor management routes (admin protected)
+router.get("/vendors", adminAuth, getVendors);
+router.patch("/vendors/:id/approve", adminAuth, approveVendor);
+router.patch("/vendors/:id/reject", adminAuth, rejectVendor);
+router.patch("/vendors/:id/suspend", adminAuth, suspendVendor);
+router.post("/vendors/:id/resend-email", adminAuth, resendVendorEmail);
 
 export default router;

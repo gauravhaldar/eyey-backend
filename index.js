@@ -15,6 +15,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js";
+import vendorRoutes from "./routes/vendorRoutes.js";
 
 const app = express();
 
@@ -28,12 +29,13 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3002",
       "https://eyeyoptics.vercel.app",
       "https://eyey-admin.vercel.app",
       "https://eyey-admin.vercel.app/login",
     ], // Allow frontend domains
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -63,6 +65,7 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/users/addresses", addressRoutes);
+app.use("/api/vendor", vendorRoutes);
 
 //Error handling middleware
 app.use(errorHandler);
