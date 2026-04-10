@@ -25,31 +25,7 @@ app.use(cookieParser());
 
 // ✅ Allow frontend requests
 app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "https://eyeyoptics.vercel.app",
-      "https://eyey-admin.vercel.app",
-      "https://eyey-admin.vercel.app/login",
-      "https://eyey-vendor.vercel.app",
-      "https://eyeyoptics-gamma.vercel.app/",
-      "https://eyey-admin-zeta.vercel.app/login",
-      "https://eyey-admin-zeta.vercel.app/"
-    ], // Allow frontend domains
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-    ],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  })
+  cors()
 );
 
 // Connect Database
