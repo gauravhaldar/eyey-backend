@@ -34,6 +34,9 @@ app.use(
       "https://eyey-admin.vercel.app",
       "https://eyey-admin.vercel.app/login",
       "https://eyey-vendor.vercel.app",
+      "https://eyeyoptics-gamma.vercel.app/",
+      "https://eyey-admin-zeta.vercel.app/login",
+      "https://eyey-admin-zeta.vercel.app/"
     ], // Allow frontend domains
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
